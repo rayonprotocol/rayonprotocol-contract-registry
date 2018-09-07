@@ -1,0 +1,107 @@
+const Registry = artifacts.require('./Registry.sol');
+const TestContract1 = artifacts.require('./TestContract1.sol');
+const TestContract2 = artifacts.require('./TestContract2.sol');
+// const TestContract3 = artifacts.require('./TestContract3.sol');
+
+require('chai')
+    .use(require('chai-as-promised'))
+    .should();
+
+var registryContract;
+var testContract1;
+var testContract2;
+// var testContract3;
+contract('Registry', function (accounts) {
+    const admin = accounts[0];
+
+    before(async function () {
+        registryContract = await Registry.new(1, { from: admin });
+        console.log('Registry is deployed: ' + registryContract.address);
+    })
+
+    describe('check empty registry', function () {
+        it('number of contract', async function () {
+            assert.equal(await registryContract.size({ from: admin }), 0);
+        })
+    })
+    describe('register TestContract1', function () {
+        it('TestContract1 is deployed. version 1', async function () {
+            testContract1 = await TestContract1.new(1, { from: admin });
+            assert.equal(await testContract1.getName({ from: admin }), "TestContract1");
+            assert.equal(await testContract1.getVersion({ from: admin }), 1);
+        })
+        it('before registering TestContract1', async function () {
+            await registryContract.getRegistryInfo("TestContract1").should.be.rejectedWith(/revert/);
+        })
+        it('register TestContract1', async function () {
+            await registryContract.register(testContract1.address, { from: admin }).should.be.fulfilled;
+
+            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract1").should.be.fulfilled;
+            assert.equal(name, "TestContract1");
+            assert.equal(contractAddress, testContract1.address);
+            assert.equal(version, 1);
+
+            assert.equal(await registryContract.size({ from: admin }), 1);
+            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            assert.equal(name, "TestContract1");
+            assert.equal(contractAddress, testContract1.address);
+            assert.equal(version, 1);
+        })
+    })
+    describe('register TestContract2', function () {
+        it('TestContract2 is deployed. version 10', async function () {
+            testContract2 = await TestContract2.new(10, { from: admin });
+            assert.equal(await testContract2.getName({ from: admin }), "TestContract2");
+            assert.equal(await testContract2.getVersion({ from: admin }), 10);
+        })
+        it('before registering TestContract2', async function () {
+            await registryContract.getRegistryInfo("TestContract2").should.be.rejectedWith(/revert/);
+        })
+        it('register TestContract2', async function () {
+            await registryContract.register(testContract2.address, { from: admin }).should.be.fulfilled;
+
+            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
+            assert.equal(name, "TestContract2");
+            assert.equal(contractAddress, testContract2.address);
+            assert.equal(version, 10);
+
+            assert.equal(await registryContract.size({ from: admin }), 2);
+            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            assert.equal(name, "TestContract1");
+            assert.equal(contractAddress, testContract1.address);
+            assert.equal(version, 1);
+            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            assert.equal(name, "TestContract2");
+            assert.equal(contractAddress, testContract2.address);
+            assert.equal(version, 10);
+        })
+    })
+    describe('upgrade TestContract2', function () {
+        it('upgrade TestContract2', async function () {
+            testContract2 = await TestContract2.new(11, { from: admin });
+            assert.equal(await testContract2.getName({ from: admin }), "TestContract2");
+            assert.equal(await testContract2.getVersion({ from: admin }), 11);
+
+            await registryContract.register(testContract2.address, { from: admin }).should.be.fulfilled;
+
+            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
+            assert.equal(name, "TestContract2");
+            assert.equal(contractAddress, testContract2.address);
+            assert.equal(version, 11);
+        })
+        it('upgrade TestContract2 with wrong version', async function () {
+            testContract2 = await TestContract2.new(1, { from: admin }); // wrong version
+            assert.equal(await testContract2.getName({ from: admin }), "TestContract2");
+            assert.equal(await testContract2.getVersion({ from: admin }), 1);
+
+            await registryContract.register(testContract2.address, { from: admin }).should.be.rejectedWith(/revert/);
+        })
+    })
+
+    after(async function () {
+        // kill contracts
+        await testContract1.kill({ from: admin }).should.be.fulfilled;
+        await testContract2.kill({ from: admin }).should.be.fulfilled;
+        await registryContract.kill({ from: admin }).should.be.fulfilled;
+    })
+})
