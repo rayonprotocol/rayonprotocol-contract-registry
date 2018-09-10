@@ -28,21 +28,20 @@ contract Registry is RayonBase {
 
         RegistryEntry storage entry = contractMap[name];
         require(version > entry.version, "version of contract to register must be greater than current version");
-        entry.version = version;
-        entry.name = name;
 
-        if(entry.contractAddress == address(0)){ // new contract
-            entry.contractAddress = _contractAddr;
+        entry.contractAddress = _contractAddr;
+        entry.version = version;
+        entry.updatedTime = now;
+        if(bytes(entry.name).length == 0){ // new contract
+            entry.index = contractNameList.push(name);
+            entry.name = name;
             emit LogContractRegistered(name);
 
             // new proxy contract deploy
             // it will be implemented on next step
         }else{ // upgraded contract
-            entry.contractAddress = _contractAddr;
             emit LogContractUpgraded(name);
         }
-
-        entry.index = contractNameList.push(name);
     }
 
     function upgrade(address _contractAddr) public onlyOwner {
@@ -55,13 +54,14 @@ contract Registry is RayonBase {
         }
     }
 
-    function getRegistryInfo(string memory _name) public view returns (string, address, uint16) {
+    function getRegistryInfo(string memory _name) public view returns (string, address, uint16, uint256) {
+        require(bytes(_name).length > 0, "name cannot be null");
         RegistryEntry storage entry = contractMap[_name];
         require(entry.contractAddress != address(0), "contract address cannot be 0x0");
-        return (entry.name, entry.contractAddress, entry.version);
+        return (entry.name, entry.contractAddress, entry.version, entry.updatedTime);
     }
 
-    function getRegistryInfoByIndex(uint _index) public view returns (string, address, uint16) {
+    function getRegistryInfoByIndex(uint _index) public view returns (string, address, uint16, uint256) {
         require(_index >= 0, "index must be in range");
         require(_index < contractNameList.length, "index must be in range");
 

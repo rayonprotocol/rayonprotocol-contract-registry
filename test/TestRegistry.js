@@ -17,6 +17,15 @@ contract('Registry', function (accounts) {
     before(async function () {
         registryContract = await Registry.new(1, { from: admin });
         console.log('Registry is deployed: ' + registryContract.address);
+
+        const contractRegisteredEvent = registryContract.LogContractRegistered({ _from: 0 }, function (error, result) {
+            if (error) assert("error occurs on event emitted: LogContractRegistered");
+            console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", blockNumber: " + result.blockNumber);
+        });
+        const contractUpgradedEvent = registryContract.LogContractUpgraded({ _from: 0 }, function (error, result) {
+            if (error) assert("error occurs on event emitted: LogContractUpgraded");
+            console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", blockNumber: " + result.blockNumber);
+        });
     })
 
     describe('check empty registry', function () {
@@ -36,13 +45,15 @@ contract('Registry', function (accounts) {
         it('register TestContract1', async function () {
             await registryContract.register(testContract1.address, { from: admin }).should.be.fulfilled;
 
-            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract1").should.be.fulfilled;
+            var [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfo("TestContract1").should.be.fulfilled;
+            console.log(name + ", " + contractAddress + ", " + version + ", " + updatedTime + ", " + new Date(updatedTime * 1000));
             assert.equal(name, "TestContract1");
             assert.equal(contractAddress, testContract1.address);
             assert.equal(version, 1);
 
             assert.equal(await registryContract.size({ from: admin }), 1);
-            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            console.log(name + ", " + contractAddress + ", " + version + ", " + updatedTime + ", " + new Date(updatedTime * 1000));
             assert.equal(name, "TestContract1");
             assert.equal(contractAddress, testContract1.address);
             assert.equal(version, 1);
@@ -60,17 +71,20 @@ contract('Registry', function (accounts) {
         it('register TestContract2', async function () {
             await registryContract.register(testContract2.address, { from: admin }).should.be.fulfilled;
 
-            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
+            var [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
+            console.log(name + ", " + contractAddress + ", " + version + ", " + updatedTime + ", " + new Date(updatedTime * 1000));
             assert.equal(name, "TestContract2");
             assert.equal(contractAddress, testContract2.address);
             assert.equal(version, 10);
 
             assert.equal(await registryContract.size({ from: admin }), 2);
-            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            console.log(name + ", " + contractAddress + ", " + version + ", " + updatedTime + ", " + new Date(updatedTime * 1000));
             assert.equal(name, "TestContract1");
             assert.equal(contractAddress, testContract1.address);
             assert.equal(version, 1);
-            [name, contractAddress, version] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            console.log(name + ", " + contractAddress + ", " + version + ", " + updatedTime + ", " + new Date(updatedTime * 1000));
             assert.equal(name, "TestContract2");
             assert.equal(contractAddress, testContract2.address);
             assert.equal(version, 10);
@@ -84,7 +98,7 @@ contract('Registry', function (accounts) {
 
             await registryContract.register(testContract2.address, { from: admin }).should.be.fulfilled;
 
-            var [name, contractAddress, version] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
+            var [name, contractAddress, version, updatedTime] = await registryContract.getRegistryInfo("TestContract2").should.be.fulfilled;
             assert.equal(name, "TestContract2");
             assert.equal(contractAddress, testContract2.address);
             assert.equal(version, 11);
