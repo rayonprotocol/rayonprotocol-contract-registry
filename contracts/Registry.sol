@@ -17,6 +17,7 @@ contract Registry is RayonBase {
     // Event defination
     event LogContractRegistered(string name, address contractAddress);
     event LogContractUpgraded(string name, address contractAddress);
+    event LogContractRemoved(string name, address contractAddress);
 
     constructor(uint16 version) RayonBase("Registry", version) public {}
 
@@ -33,7 +34,7 @@ contract Registry is RayonBase {
         entry.version = version;
         entry.updatedTime = now;
         if(!_contains(entry)){ // new contract
-            entry.index = contractNameList.push(name);
+            entry.index = contractNameList.push(name) - 1;
             entry.name = name;
             emit LogContractRegistered(name, _contractAddress);
 
@@ -42,6 +43,24 @@ contract Registry is RayonBase {
         }else{ // upgraded contract
             emit LogContractUpgraded(name, _contractAddress);
         }
+    }
+
+    function remove(string memory _name) public onlyOwner {
+        RegistryEntry storage entry = contractMap[_name];
+        require(_contains(entry), "contract must be present in map");
+        require(_isInRange(entry.index), "index must be in range");
+        string memory deleteEntryName = entry.name;
+        uint256 deleteEntryIndex = entry.index;
+        address deleteEntryAddress = entry.contractAddress;
+
+        // Move last element into the delete key slot.
+        uint256 lastEntryIndex = contractNameList.length - 1;
+        string memory lastEntryName = contractNameList[lastEntryIndex];
+        contractMap[lastEntryName].index = deleteEntryIndex; // contractMap
+        contractNameList[deleteEntryIndex] = contractNameList[lastEntryIndex]; // contractNameList
+        contractNameList.length--;
+        delete contractMap[deleteEntryName];
+        emit LogContractRemoved(deleteEntryName, deleteEntryAddress);
     }
 
     function upgrade(address _contractAddress) public onlyOwner {
@@ -61,15 +80,10 @@ contract Registry is RayonBase {
     }
 
     function getRegistryInfoByIndex(uint _index) public view onlyOwner returns (string, address, uint16, uint256) {
-        require(_index >= 0, "index must be in range");
-        require(_index < contractNameList.length, "index must be in range");
+        require(_isInRange(_index), "index must be in range");
 
         string memory name = contractNameList[_index];
         return getRegistryInfo(name);
-    }
-
-    function _contains(RegistryEntry memory _entry) private pure returns (bool){
-        return (bytes(_entry.name).length > 0) && (_entry.contractAddress != address(0));
     }
 
     function contains(string memory _name) public view returns (bool) {
@@ -81,4 +95,11 @@ contract Registry is RayonBase {
         return contractNameList.length;
     }
 
+    function _isInRange(uint256 _index) private view returns (bool) {
+        return (_index >= 0) && (_index < contractNameList.length);
+    }
+
+    function _contains(RegistryEntry memory _entry) private pure returns (bool){
+        return (_entry.contractAddress != address(0)) && (bytes(_entry.name).length > 0);
+    }
 }
