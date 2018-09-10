@@ -15,53 +15,52 @@ contract Registry is RayonBase {
     string[] internal contractNameList;
 
     // Event defination
-    event LogContractRegistered(string name);
-    event LogContractUpgraded(string name);
+    event LogContractRegistered(string name, address contractAddress);
+    event LogContractUpgraded(string name, address contractAddress);
 
     constructor(uint16 version) RayonBase("Registry", version) public {}
 
-    function register(address _contractAddr) public onlyOwner {
-        require(_contractAddr != address(0), "contract address cannot be 0x0");
-        RayonBase rayonContract = RayonBase(_contractAddr);
+    function register(address _contractAddress) public onlyOwner {
+        require(_contractAddress != address(0), "contract address cannot be 0x0");
+        RayonBase rayonContract = RayonBase(_contractAddress);
         uint16 version = rayonContract.getVersion();
         string memory name = rayonContract.getName();
 
         RegistryEntry storage entry = contractMap[name];
         require(version > entry.version, "version of contract to register must be greater than current version");
 
-        entry.contractAddress = _contractAddr;
+        entry.contractAddress = _contractAddress;
         entry.version = version;
         entry.updatedTime = now;
-        if(bytes(entry.name).length == 0){ // new contract
+        if(!_contains(entry)){ // new contract
             entry.index = contractNameList.push(name);
             entry.name = name;
-            emit LogContractRegistered(name);
+            emit LogContractRegistered(name, _contractAddress);
 
             // new proxy contract deploy
             // it will be implemented on next step
         }else{ // upgraded contract
-            emit LogContractUpgraded(name);
+            emit LogContractUpgraded(name, _contractAddress);
         }
     }
 
-    function upgrade(address _contractAddr) public onlyOwner {
-        register(_contractAddr);
+    function upgrade(address _contractAddress) public onlyOwner {
+        register(_contractAddress);
     }
 
-    function upgradeAll(address[] _contractAddrList) public onlyOwner {
-        for(uint i; i<_contractAddrList.length; i++){
-            register(_contractAddrList[i]);
+    function upgradeAll(address[] _contractAddressList) public onlyOwner {
+        for(uint i; i<_contractAddressList.length; i++){
+            register(_contractAddressList[i]);
         }
     }
 
     function getRegistryInfo(string memory _name) public view returns (string, address, uint16, uint256) {
-        require(bytes(_name).length > 0, "name cannot be null");
         RegistryEntry storage entry = contractMap[_name];
-        require(entry.contractAddress != address(0), "contract address cannot be 0x0");
+        require(_contains(entry), "contract must be present in map");
         return (entry.name, entry.contractAddress, entry.version, entry.updatedTime);
     }
 
-    function getRegistryInfoByIndex(uint _index) public view returns (string, address, uint16, uint256) {
+    function getRegistryInfoByIndex(uint _index) public view onlyOwner returns (string, address, uint16, uint256) {
         require(_index >= 0, "index must be in range");
         require(_index < contractNameList.length, "index must be in range");
 
@@ -69,7 +68,16 @@ contract Registry is RayonBase {
         return getRegistryInfo(name);
     }
 
-    function size() public view returns (uint) {
+    function _contains(RegistryEntry memory _entry) private pure returns (bool){
+        return (bytes(_entry.name).length > 0) && (_entry.contractAddress != address(0));
+    }
+
+    function contains(string memory _name) public view returns (bool) {
+        RegistryEntry storage entry = contractMap[_name];
+        return _contains(entry);
+    }
+
+    function size() public view onlyOwner returns (uint) {
         return contractNameList.length;
     }
 
