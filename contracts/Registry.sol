@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "../../rayonprotocol-contract-common/contracts/RayonBase.sol";
+import "../../rayonprotocol-ico/contracts/RayonToken.sol";
 
 contract Registry is RayonBase {
     struct RegistryEntry {
@@ -21,12 +22,7 @@ contract Registry is RayonBase {
 
     constructor(uint16 version) RayonBase("Registry", version) public {}
 
-    function register(address _contractAddress) public onlyOwner {
-        require(_contractAddress != address(0), "contract address cannot be 0x0");
-        RayonBase rayonContract = RayonBase(_contractAddress);
-        uint16 version = rayonContract.getVersion();
-        string memory name = rayonContract.getName();
-
+    function _registerOrUpgrade(string memory _name, address _contractAddress, uint _version) private {
         RegistryEntry storage entry = contractMap[name];
         require(version > entry.version, "version of contract to register must be greater than current version");
 
@@ -42,6 +38,34 @@ contract Registry is RayonBase {
             // it will be implemented on next step
         }else{ // upgraded contract
             emit LogContractUpgraded(name, _contractAddress);
+        }
+    }
+
+    function registerToken(address _contractAddress, uint16 _version) public onlyOwner {
+        require(_contractAddress != address(0), "contract address cannot be 0x0");
+        RayonToken rayonTokenContract = RayonToken(_contractAddress);
+        require(keccak256(rayonTokenContract.symbol()) == keccak256("RYN"), "checking RayonToken's symbol");
+        string memory name = "RayonToken";
+
+        _registerOrUpgrade(name, _contractAddress, _version);
+    }
+
+    function register(address _contractAddress) public onlyOwner {
+        require(_contractAddress != address(0), "contract address cannot be 0x0");
+        RayonBase rayonContract = RayonBase(_contractAddress);
+        uint16 version = rayonContract.getVersion();
+        string memory name = rayonContract.getName();
+
+        _registerOrUpgrade(name, _contractAddress, version);
+    }
+
+    function upgrade(address _contractAddress) public onlyOwner {
+        register(_contractAddress);
+    }
+
+    function upgradeAll(address[] _contractAddressList) public onlyOwner {
+        for(uint i; i<_contractAddressList.length; i++){
+            register(_contractAddressList[i]);
         }
     }
 
@@ -61,16 +85,6 @@ contract Registry is RayonBase {
         contractNameList.length--;
         delete contractMap[deleteEntryName];
         emit LogContractRemoved(deleteEntryName, deleteEntryAddress);
-    }
-
-    function upgrade(address _contractAddress) public onlyOwner {
-        register(_contractAddress);
-    }
-
-    function upgradeAll(address[] _contractAddressList) public onlyOwner {
-        for(uint i; i<_contractAddressList.length; i++){
-            register(_contractAddressList[i]);
-        }
     }
 
     function getRegistryInfo(string memory _name) public view returns (string, address, uint16, uint256) {
