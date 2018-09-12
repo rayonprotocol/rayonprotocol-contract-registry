@@ -4,7 +4,7 @@ This is a registry contract project of RayonProtocol. It stores and manages all 
 
 ## About
 ### Architecture
-![kyc_arch](doc/rayon_registry_arch.png)
+![registry_arch](doc/rayon_registry_arch.png)
 
 
 ## Getting Started
