@@ -25,9 +25,17 @@ contract('Registry Contract Test', function (accounts) {
             registryContract = await Registry.new(1, { from: admin });
             console.log('Registry is deployed: ' + registryContract.address);
 
-            const contractEvents = registryContract.allEvents({ _from: 0 }, function (error, result) {
+            const contractRegisteredEvents = registryContract.LogContractRegistered({ _from: 0 }, function (error, result) {
                 if (error) assert("error occurs on event emitted");
                 console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", contract: " + result.args.contractAddress + ", blockNumber: " + result.blockNumber);
+            });
+            const contractUpgradedEvents = registryContract.LogContractUpgraded({ _from: 0 }, function (error, result) {
+                if (error) assert("error occurs on event emitted");
+                console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", contract: " + result.args.contractAddress + ", interface: " + result.args.interfaceAddress + ", blockNumber: " + result.blockNumber);
+            });
+            const contractRemovedEvents = registryContract.LogContractRemoved({ _from: 0 }, function (error, result) {
+                if (error) assert("error occurs on event emitted");
+                console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", blockNumber: " + result.blockNumber);
             });
         })
         it('check empty registry', async function () {
@@ -144,6 +152,27 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
+        it('remove contractName3', async function () {
+            await registryContract.remove(contractName3, { from: admin }).should.be.fulfilled;
+            await registryContract.getRegistryInfo(contractName3).should.be.rejectedWith(/revert/);
+
+            assert.equal(await registryContract.size({ from: admin }), 0);
+        })
+        after(async function () {
+            // kill proxyContracts
+            await proxyContract1.kill({ from: admin }).should.be.fulfilled;
+            await proxyContract1.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            await proxyContract2.kill({ from: admin }).should.be.fulfilled;
+            await proxyContract2.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            await proxyContract3.kill({ from: admin }).should.be.fulfilled;
+            await proxyContract3.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            // kill registryContract
+            await registryContract.kill({ from: admin }).should.be.fulfilled;
+            await registryContract.owner({ from: admin }).should.be.rejectedWith(Error);
+        })
     })
 
     describe('Register and upgrade test with TestScore Contract', function () {
@@ -159,9 +188,17 @@ contract('Registry Contract Test', function (accounts) {
             registryContract = await Registry.new(1, { from: admin });
             console.log('Registry is deployed: ' + registryContract.address);
 
-            const contractEvents = registryContract.allEvents({ _from: 0 }, function (error, result) {
+            const contractRegisteredEvents = registryContract.LogContractRegistered({ _from: 0 }, function (error, result) {
                 if (error) assert("error occurs on event emitted");
                 console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", contract: " + result.args.contractAddress + ", blockNumber: " + result.blockNumber);
+            });
+            const contractUpgradedEvents = registryContract.LogContractUpgraded({ _from: 0 }, function (error, result) {
+                if (error) assert("error occurs on event emitted");
+                console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", contract: " + result.args.contractAddress + ", interface: " + result.args.interfaceAddress + ", blockNumber: " + result.blockNumber);
+            });
+            const contractRemovedEvents = registryContract.LogContractRemoved({ _from: 0 }, function (error, result) {
+                if (error) assert("error occurs on event emitted");
+                console.log("Event emitted: " + result.event + ", name: " + result.args.name + ", blockNumber: " + result.blockNumber);
             });
         })
         it('check empty registry', async function () {
@@ -280,7 +317,7 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(interfaceAddress, testScoreContractV2.address);
             assert.equal(version, 2);
         })
-        it('deploy TestScoreV2 and try to upgrade TestScore - unmatched name', async function () {
+        it('deploy TestScoreV3 and try to upgrade TestScore - unmatched name', async function () {
             testScoreContractV3 = await TestScoreV3.new({ from: admin });
             assert.notEqual(await testScoreContractV3.getName({ from: admin }), contractName);
             assert.equal(await testScoreContractV3.getVersion({ from: admin }), 3);
@@ -297,6 +334,24 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(contractAddress, testScoreInterface.address);
             assert.equal(interfaceAddress, testScoreContractV2.address);
             assert.equal(version, 2);
+        })
+        after(async function () {
+            // kill TestScore contracts
+            await testScoreProxy.kill({ from: admin }).should.be.fulfilled;
+            await testScoreProxy.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            await testScoreContractV1.kill({ from: admin }).should.be.fulfilled;
+            await testScoreContractV1.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            await testScoreContractV2.kill({ from: admin }).should.be.fulfilled;
+            await testScoreContractV2.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            await testScoreContractV3.kill({ from: admin }).should.be.fulfilled;
+            await testScoreContractV3.owner({ from: admin }).should.be.rejectedWith(Error);
+            
+            // kill registryContract
+            await registryContract.kill({ from: admin }).should.be.fulfilled;
+            await registryContract.owner({ from: admin }).should.be.rejectedWith(Error);
         })
     })
 })
