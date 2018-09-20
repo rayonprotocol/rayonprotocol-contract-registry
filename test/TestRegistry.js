@@ -47,15 +47,17 @@ contract('Registry Contract Test', function (accounts) {
 
             await registryContract.register(proxyContract1.address, blockNumber).should.be.fulfilled;
 
-            var [name, contractAddress, version, ,] = await registryContract.getRegistryInfo(contractName1).should.be.fulfilled;
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName1).should.be.fulfilled;
             assert.equal(name, contractName1);
             assert.equal(contractAddress, proxyContract1.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
 
             assert.equal(await registryContract.size({ from: admin }), 1);
-            var [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
             assert.equal(name, contractName1);
             assert.equal(contractAddress, proxyContract1.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
         it('deploy and register RayonProxy with contractName2', async function () {
@@ -66,19 +68,22 @@ contract('Registry Contract Test', function (accounts) {
 
             await registryContract.register(proxyContract2.address, blockNumber).should.be.fulfilled;
 
-            var [name, contractAddress, version, ,] = await registryContract.getRegistryInfo(contractName2).should.be.fulfilled;
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName2).should.be.fulfilled;
             assert.equal(name, contractName2);
             assert.equal(contractAddress, proxyContract2.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
 
             assert.equal(await registryContract.size({ from: admin }), 2);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
             assert.equal(name, contractName1);
             assert.equal(contractAddress, proxyContract1.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
             assert.equal(name, contractName2);
             assert.equal(contractAddress, proxyContract2.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
         it('deploy and register RayonProxy with contractName3', async function () {
@@ -89,23 +94,27 @@ contract('Registry Contract Test', function (accounts) {
 
             await registryContract.register(proxyContract3.address, blockNumber).should.be.fulfilled;
 
-            var [name, contractAddress, version, ,] = await registryContract.getRegistryInfo(contractName3).should.be.fulfilled;
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName3).should.be.fulfilled;
             assert.equal(name, contractName3);
             assert.equal(contractAddress, proxyContract3.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
 
             assert.equal(await registryContract.size({ from: admin }), 3);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
             assert.equal(name, contractName1);
             assert.equal(contractAddress, proxyContract1.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
             assert.equal(name, contractName2);
             assert.equal(contractAddress, proxyContract2.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(2).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(2).should.be.fulfilled;
             assert.equal(name, contractName3);
             assert.equal(contractAddress, proxyContract3.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
         it('remove contractName1', async function () {
@@ -113,13 +122,15 @@ contract('Registry Contract Test', function (accounts) {
             await registryContract.getRegistryInfo(contractName1).should.be.rejectedWith(/revert/);
 
             assert.equal(await registryContract.size({ from: admin }), 2);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
             assert.equal(name, contractName3);
             assert.equal(contractAddress, proxyContract3.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(1).should.be.fulfilled;
             assert.equal(name, contractName2);
             assert.equal(contractAddress, proxyContract2.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
         it('remove contractName2', async function () {
@@ -127,15 +138,16 @@ contract('Registry Contract Test', function (accounts) {
             await registryContract.getRegistryInfo(contractName2).should.be.rejectedWith(/revert/);
 
             assert.equal(await registryContract.size({ from: admin }), 1);
-            [name, contractAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
             assert.equal(name, contractName3);
             assert.equal(contractAddress, proxyContract3.address);
+            assert.equal(interfaceAddress, 0x0);
             assert.equal(version, 0);
         })
     })
 
     describe('Register and upgrade test with TestScore Contract', function () {
-        const name = "TestScore";
+        const contractName = "TestScore";
         var registryContract;
         var testScoreProxy;
         var testScoreContractV1;
@@ -158,53 +170,56 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(await registryContract.contains("name2", { from: admin }), false);
         })
         it('deploy TestScoreProxy', async function () {
-            testScoreProxy = await RayonProxy.new(name, { from: admin });
+            testScoreProxy = await RayonProxy.new(contractName, { from: admin });
             blockNumber = web3.eth.getTransaction(testScoreProxy.transactionHash).blockNumber;
             testScoreInterface = await TestScoreV1.at(testScoreProxy.address, { from: admin });
 
-            assert.equal(await testScoreInterface.getName({ from: admin }), name);
+            assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
             assert.equal(await testScoreInterface.getVersion({ from: admin }), 0);
 
-            var [name1, version1, proxy1] = await registryContract.getContractInfo(testScoreInterface.address).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(version1, 0);
-            assert.equal(proxy1, true);
+            var [name, version, proxy] = await registryContract.getContractInfo(testScoreInterface.address).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(version, 0);
+            assert.equal(proxy, true);
         })
         it('register TestScore with TestScoreProxy', async function () {
             await registryContract.register(testScoreProxy.address, blockNumber).should.be.fulfilled;
 
-            var [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfo(name).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 0);
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, 0x0);
+            assert.equal(version, 0);
 
             assert.equal(await registryContract.size({ from: admin }), 1);
-            [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 0);
+            [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, 0x0);
+            assert.equal(version, 0);
         })
         it('deploy TestScoreV1', async function () {
             testScoreContractV1 = await TestScoreV1.new({ from: admin });
-            assert.equal(await testScoreContractV1.getName({ from: admin }), name);
+            assert.equal(await testScoreContractV1.getName({ from: admin }), contractName);
             assert.equal(await testScoreContractV1.getVersion({ from: admin }), 1);
 
-            var [name1, version1, proxy1] = await registryContract.getContractInfo(testScoreContractV1.address).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(version1, 1);
-            assert.equal(proxy1, false);
+            var [name, version, proxy] = await registryContract.getContractInfo(testScoreContractV1.address).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(version, 1);
+            assert.equal(proxy, false);
         })
         it('upgrade TestScore to TestScoreV1', async function () {
             await registryContract.upgrade(testScoreContractV1.address).should.be.fulfilled;
             assert.equal(await testScoreProxy.getTargetAddress({ from: admin }), testScoreContractV1.address);
 
-            assert.equal(await testScoreInterface.getName({ from: admin }), name);
+            assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
             assert.equal(await testScoreInterface.getVersion({ from: admin }), 1);
 
-            var [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfo(name).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 1);
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, testScoreContractV1.address);
+            assert.equal(version, 1);
         })
         it('check TestScore functions - target contract is TestScoreV1', async function () {
             assert.equal(await testScoreInterface.getScore({ from: admin }), 0);
@@ -219,25 +234,26 @@ contract('Registry Contract Test', function (accounts) {
         })
         it('deploy TestScoreV2', async function () {
             testScoreContractV2 = await TestScoreV2.new({ from: admin });
-            assert.equal(await testScoreContractV2.getName({ from: admin }), name);
+            assert.equal(await testScoreContractV2.getName({ from: admin }), contractName);
             assert.equal(await testScoreContractV2.getVersion({ from: admin }), 2);
 
-            var [name1, version1, proxy1] = await registryContract.getContractInfo(testScoreContractV2.address).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(version1, 2);
-            assert.equal(proxy1, false);
+            var [name, version, proxy] = await registryContract.getContractInfo(testScoreContractV2.address).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(version, 2);
+            assert.equal(proxy, false);
         })
         it('upgrade TestScore to TestScoreV2', async function () {
             await registryContract.upgrade(testScoreContractV2.address).should.be.fulfilled;
             assert.equal(await testScoreProxy.getTargetAddress({ from: admin }), testScoreContractV2.address);
 
-            assert.equal(await testScoreInterface.getName({ from: admin }), name);
+            assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
             assert.equal(await testScoreInterface.getVersion({ from: admin }), 2);
 
-            var [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfo(name).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 2);
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, testScoreContractV2.address);
+            assert.equal(version, 2);
         })
         it('check TestScore functions - target contract is TestScoreV2', async function () {
             assert.equal(await testScoreInterface.getScore({ from: admin }), 20);
@@ -255,30 +271,32 @@ contract('Registry Contract Test', function (accounts) {
             await registryContract.upgrade(testScoreContractV1.address).should.be.rejectedWith(/revert/);
 
             // current target is TestScoreV2
-            assert.equal(await testScoreInterface.getName({ from: admin }), name);
+            assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
             assert.equal(await testScoreInterface.getVersion({ from: admin }), 2);
 
-            var [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfo(name).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 2);
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, testScoreContractV2.address);
+            assert.equal(version, 2);
         })
         it('deploy TestScoreV2 and try to upgrade TestScore - unmatched name', async function () {
             testScoreContractV3 = await TestScoreV3.new({ from: admin });
-            assert.notEqual(await testScoreContractV3.getName({ from: admin }), name);
+            assert.notEqual(await testScoreContractV3.getName({ from: admin }), contractName);
             assert.equal(await testScoreContractV3.getVersion({ from: admin }), 3);
 
             // failed to upgrade TestScore with TestScoreV2
             await registryContract.upgrade(testScoreContractV3.address).should.be.rejectedWith(/revert/);
 
             // current target is TestScoreV2
-            assert.equal(await testScoreInterface.getName({ from: admin }), name);
+            assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
             assert.equal(await testScoreInterface.getVersion({ from: admin }), 2);
 
-            var [name1, contractAddress1, version1, blockNumber1, updatedTime1] = await registryContract.getRegistryInfo(name).should.be.fulfilled;
-            assert.equal(name1, name);
-            assert.equal(contractAddress1, testScoreInterface.address);
-            assert.equal(version1, 2);
+            var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfo(contractName).should.be.fulfilled;
+            assert.equal(name, contractName);
+            assert.equal(contractAddress, testScoreInterface.address);
+            assert.equal(interfaceAddress, testScoreContractV2.address);
+            assert.equal(version, 2);
         })
     })
 })

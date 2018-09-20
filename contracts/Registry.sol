@@ -9,18 +9,20 @@ contract Registry is RayonBase {
         uint256 index;
         string name;
         address contractAddress;
+        address interfaceAddress;
         uint16 version;
         uint256 blockNumber;
         uint256 updatedTime;
     }
-    mapping(string => RegistryEntry) internal proxyMap;
-    mapping(string => mapping(uint16 => RegistryEntry)) internal contractVersionMap;
+
+    mapping(string => RegistryEntry) internal entryMap;
+    // mapping(string => mapping(uint16 => RegistryEntry)) internal contractVersionMap;
     string[] internal contractNameList;
 
     // Event defination
     event LogContractRegistered(string name, address contractAddress);
-    event LogContractUpgraded(string name, address contractAddress);
-    event LogContractRemoved(string name, address contractAddress);
+    event LogContractUpgraded(string name, address contractAddress, address interfaceAddress);
+    event LogContractRemoved(string name);
 
     constructor(uint16 version) RayonBase("Registry", version) public {}
 
@@ -31,12 +33,13 @@ contract Registry is RayonBase {
     }
 
     function _addRegistryEntry(string memory _name, address _contractAddress, uint16 _version, uint256 _blockNumber) private {
-        RegistryEntry storage entry = proxyMap[_name];
+        RegistryEntry storage entry = entryMap[_name];
         require(!_contains(entry), "proxy to register cannot be in map");
 
         entry.index = contractNameList.push(_name) - 1;
         entry.name = _name;
         entry.contractAddress = _contractAddress;
+        entry.interfaceAddress = address(0);
         entry.version = _version;
         entry.blockNumber = _blockNumber;
         entry.updatedTime = now;
@@ -54,22 +57,17 @@ contract Registry is RayonBase {
 
         _addRegistryEntry(name, _proxyAddress, version, _blockNumber);
 
-        // target contract
-        if(address(rayonProxy.getTargetAddress()) != address(0)){
-            // add to contractVersionMap
-        }
-
         // event
         emit LogContractRegistered(name, _proxyAddress);
     }
 
-    function registerToken(address _contractAddress, uint16 _version, uint256 _blockNumber) public onlyOwner {
-        require(_contractAddress != address(0), "contract address cannot be 0x0");
-        RayonToken rayonTokenContract = RayonToken(_contractAddress);
-        require(keccak256(rayonTokenContract.symbol()) == keccak256("RYN"), "checking RayonToken's symbol");
+    function registerToken(address _tokenContractAddress, uint16 _version, uint256 _blockNumber) public onlyOwner {
+        require(_tokenContractAddress != address(0), "contract address cannot be 0x0");
+        RayonToken rayonTokenContract = RayonToken(_tokenContractAddress);
+        require(keccak256(abi.encodePacked(rayonTokenContract.symbol())) == keccak256(abi.encodePacked("RYN")), "checking RayonToken's symbol");
         string memory name = "RayonToken";
 
-        _addRegistryEntry(name, _contractAddress, _version, _blockNumber);
+        _addRegistryEntry(name, _tokenContractAddress, _version, _blockNumber);
     }
 
     function upgrade(address _contractAddress) public onlyOwner {
@@ -81,13 +79,14 @@ contract Registry is RayonBase {
         uint16 version = rayonContract.getVersion();
 
         // RegisterEntry
-        RegistryEntry storage entry = proxyMap[name];
+        RegistryEntry storage entry = entryMap[name];
         require(_contains(entry), "contract must be in map");
 
         address proxyAddress = entry.contractAddress;
         RayonProxy rayonProxy = RayonProxy(proxyAddress);
         require(version > entry.version, "contract's version to register must be greater than current version");
 
+        entry.interfaceAddress = _contractAddress;
         entry.version = version;
         entry.updatedTime = now;
 
@@ -95,7 +94,7 @@ contract Registry is RayonBase {
         rayonProxy.setTargetAddress(_contractAddress);
 
         // event
-        emit LogContractUpgraded(name, _contractAddress);
+        emit LogContractUpgraded(name, proxyAddress, _contractAddress);
     }
 
     function upgradeAll(address[] _contractAddressList) public onlyOwner {
@@ -105,32 +104,31 @@ contract Registry is RayonBase {
     }
 
     function remove(string memory _name) public onlyOwner {
-        RegistryEntry storage entry = proxyMap[_name];
+        RegistryEntry storage entry = entryMap[_name];
         require(_contains(entry), "contract must be present in map");
         require(_isInRange(entry.index), "index must be in range");
         string memory deleteEntryName = entry.name;
         uint256 deleteEntryIndex = entry.index;
-        address deleteEntryAddress = entry.contractAddress;
 
         // Move last element into the delete key slot.
         uint256 lastEntryIndex = contractNameList.length - 1;
         string memory lastEntryName = contractNameList[lastEntryIndex];
-        proxyMap[lastEntryName].index = deleteEntryIndex; // proxyMap
+        entryMap[lastEntryName].index = deleteEntryIndex; // entryMap
         contractNameList[deleteEntryIndex] = contractNameList[lastEntryIndex]; // contractNameList
         contractNameList.length--;
-        delete proxyMap[deleteEntryName];
+        delete entryMap[deleteEntryName];
 
         // event
-        emit LogContractRemoved(deleteEntryName, deleteEntryAddress);
+        emit LogContractRemoved(deleteEntryName);
     }
 
-    function getRegistryInfo(string memory _name) public view returns (string, address, uint16, uint256, uint256) {
-        RegistryEntry storage entry = proxyMap[_name];
+    function getRegistryInfo(string memory _name) public view returns (string, address, address, uint16, uint256, uint256) {
+        RegistryEntry storage entry = entryMap[_name];
         require(_contains(entry), "contract must be present in map");
-        return (entry.name, entry.contractAddress, entry.version, entry.blockNumber, entry.updatedTime);
+        return (entry.name, entry.contractAddress, entry.interfaceAddress, entry.version, entry.blockNumber, entry.updatedTime);
     }
 
-    function getRegistryInfoByIndex(uint _index) public view onlyOwner returns (string, address, uint16, uint256, uint256) {
+    function getRegistryInfoByIndex(uint _index) public view onlyOwner returns (string, address, address, uint16, uint256, uint256) {
         require(_isInRange(_index), "index must be in range");
 
         string memory name = contractNameList[_index];
@@ -138,7 +136,7 @@ contract Registry is RayonBase {
     }
 
     function contains(string memory _name) public view returns (bool) {
-        RegistryEntry storage entry = proxyMap[_name];
+        RegistryEntry storage entry = entryMap[_name];
         return _contains(entry);
     }
 
