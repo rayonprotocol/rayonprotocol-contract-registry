@@ -43,9 +43,9 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(await registryContract.contains(contractName1, { from: admin }), false);
             assert.equal(await registryContract.contains(contractName2, { from: admin }), false);
             assert.equal(await registryContract.contains(contractName3, { from: admin }), false);
-            await registryContract.getRegistryInfo(contractName1).should.be.rejectedWith(/revert/);
-            await registryContract.getRegistryInfo(contractName2).should.be.rejectedWith(/revert/);
-            await registryContract.getRegistryInfo(contractName3).should.be.rejectedWith(/revert/);
+            await registryContract.getRegistryInfo(contractName1).should.be.rejected;
+            await registryContract.getRegistryInfo(contractName2).should.be.rejected;
+            await registryContract.getRegistryInfo(contractName3).should.be.rejected;
         })
         it('deploy and register RayonProxy with contractName1', async function () {
             proxyContract1 = await RayonProxy.new(contractName1, { from: admin });
@@ -127,7 +127,7 @@ contract('Registry Contract Test', function (accounts) {
         })
         it('remove contractName1', async function () {
             await registryContract.remove(contractName1, { from: admin }).should.be.fulfilled;
-            await registryContract.getRegistryInfo(contractName1).should.be.rejectedWith(/revert/);
+            await registryContract.getRegistryInfo(contractName1).should.be.rejected;
 
             assert.equal(await registryContract.size({ from: admin }), 2);
             var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
@@ -143,7 +143,7 @@ contract('Registry Contract Test', function (accounts) {
         })
         it('remove contractName2', async function () {
             await registryContract.remove(contractName2, { from: admin }).should.be.fulfilled;
-            await registryContract.getRegistryInfo(contractName2).should.be.rejectedWith(/revert/);
+            await registryContract.getRegistryInfo(contractName2).should.be.rejected;
 
             assert.equal(await registryContract.size({ from: admin }), 1);
             var [name, contractAddress, interfaceAddress, version, ,] = await registryContract.getRegistryInfoByIndex(0).should.be.fulfilled;
@@ -154,24 +154,24 @@ contract('Registry Contract Test', function (accounts) {
         })
         it('remove contractName3', async function () {
             await registryContract.remove(contractName3, { from: admin }).should.be.fulfilled;
-            await registryContract.getRegistryInfo(contractName3).should.be.rejectedWith(/revert/);
+            await registryContract.getRegistryInfo(contractName3).should.be.rejected;
 
             assert.equal(await registryContract.size({ from: admin }), 0);
         })
         after(async function () {
             // kill proxyContracts
             await proxyContract1.kill({ from: admin }).should.be.fulfilled;
-            await proxyContract1.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await proxyContract1.getName({ from: admin }).should.be.rejected;
+
             await proxyContract2.kill({ from: admin }).should.be.fulfilled;
-            await proxyContract2.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await proxyContract2.getName({ from: admin }).should.be.rejected;
+
             await proxyContract3.kill({ from: admin }).should.be.fulfilled;
-            await proxyContract3.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await proxyContract3.getName({ from: admin }).should.be.rejected;
+
             // kill registryContract
             await registryContract.kill({ from: admin }).should.be.fulfilled;
-            await registryContract.owner({ from: admin }).should.be.rejectedWith(Error);
+            await registryContract.getName({ from: admin }).should.be.rejected;
         })
     })
 
@@ -305,7 +305,7 @@ contract('Registry Contract Test', function (accounts) {
         })
         it('try to upgrade TestScore with TestScoreV1 - lower version', async function () {
             // failed to upgrade TestScore with TestScoreV1
-            await registryContract.upgrade(testScoreContractV1.address).should.be.rejectedWith(/revert/);
+            await registryContract.upgrade(testScoreContractV1.address).should.be.rejected;
 
             // current target is TestScoreV2
             assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
@@ -323,7 +323,7 @@ contract('Registry Contract Test', function (accounts) {
             assert.equal(await testScoreContractV3.getVersion({ from: admin }), 3);
 
             // failed to upgrade TestScore with TestScoreV2
-            await registryContract.upgrade(testScoreContractV3.address).should.be.rejectedWith(/revert/);
+            await registryContract.upgrade(testScoreContractV3.address).should.be.rejected;
 
             // current target is TestScoreV2
             assert.equal(await testScoreInterface.getName({ from: admin }), contractName);
@@ -338,20 +338,20 @@ contract('Registry Contract Test', function (accounts) {
         after(async function () {
             // kill TestScore contracts
             await testScoreProxy.kill({ from: admin }).should.be.fulfilled;
-            await testScoreProxy.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await testScoreProxy.getName({ from: admin }).should.be.rejected;
+
             await testScoreContractV1.kill({ from: admin }).should.be.fulfilled;
-            await testScoreContractV1.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await testScoreContractV1.getName({ from: admin }).should.be.rejected;
+
             await testScoreContractV2.kill({ from: admin }).should.be.fulfilled;
-            await testScoreContractV2.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await testScoreContractV2.getName({ from: admin }).should.be.rejected;
+
             await testScoreContractV3.kill({ from: admin }).should.be.fulfilled;
-            await testScoreContractV3.owner({ from: admin }).should.be.rejectedWith(Error);
-            
+            await testScoreContractV3.getName({ from: admin }).should.be.rejected;
+
             // kill registryContract
             await registryContract.kill({ from: admin }).should.be.fulfilled;
-            await registryContract.owner({ from: admin }).should.be.rejectedWith(Error);
+            await registryContract.getName({ from: admin }).should.be.rejected;
         })
     })
 })
