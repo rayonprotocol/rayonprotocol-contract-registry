@@ -7,6 +7,8 @@
     "test": "test"
   },
   "scripts": {
+    "migrate:testnet": "rm -rf ./build && truffle compile && truffle migrate --network ropsten --verbose",
+    "migrate:dev": "rm -rf ./build && truffle compile && truffle migrate --network development --reset",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,8 +22,12 @@
   },
   "homepage": "https://github.com/rayonprotocol/rayonprotocol-contract-registry#readme",
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-register": "^6.26.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "openzeppelin-solidity": "^1.12.0"
+    "dotenv": "^6.1.0",
+    "openzeppelin-solidity": "^1.12.0",
+    "truffle-hdwallet-provider": "^0.0.6"
   }
 }
